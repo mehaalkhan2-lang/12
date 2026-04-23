@@ -12,7 +12,6 @@ import { getAIConciergeResponse } from "./lib/ai";
 import ReactMarkdown from 'react-markdown';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, where, limit } from 'firebase/firestore';
 import { onAuthStateChanged, signOut, User as FirebaseUser } from 'firebase/auth';
-import { Analytics } from '@vercel/analytics/react';
 
 const ingredients = [
   { 
@@ -1860,7 +1859,6 @@ export default function App() {
           )}
         </motion.button>
       </div>
-      <Analytics />
 
     </div>
   );
