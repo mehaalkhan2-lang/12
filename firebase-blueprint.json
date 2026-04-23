@@ -1,0 +1,74 @@
+{
+  "entities": {
+    "Order": {
+      "title": "Order",
+      "description": "A customer order for X LUXE products.",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string", "description": "Full name of the customer" },
+        "email": { "type": "string", "format": "email", "description": "Contact email" },
+        "phone": { "type": "string", "description": "Contact phone number (WhatsApp)" },
+        "shippingAddress": { "type": "string", "description": "Full delivery address" },
+        "productName": { "type": "string", "description": "The specific edition ordered (Standard/Grandeur/Private)" },
+        "orderStatus": { "type": "string", "enum": ["pending", "confirmed", "shipped", "delivered"], "description": "Current status of the order" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of creation" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp of last update" }
+      },
+      "required": ["customerName", "phone", "shippingAddress", "productName", "orderStatus", "createdAt"]
+    },
+    "AdminProfile": {
+      "title": "Admin Profile",
+      "description": "User profile with administrative privileges.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "isAdmin": { "type": "boolean" }
+      },
+      "required": ["email", "isAdmin"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "A product review left by a customer.",
+      "type": "object",
+      "properties": {
+        "productName": { "type": "string", "description": "The product being reviewed" },
+        "userName": { "type": "string", "description": "Name of the reviewer" },
+        "rating": { "type": "number", "minimum": 1, "maximum": 5, "description": "Star rating out of 5" },
+        "comment": { "type": "string", "description": "Detailed review text" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the review was posted" },
+        "isApproved": { "type": "boolean", "description": "Whether the review has been moderated" }
+      },
+      "required": ["productName", "userName", "rating", "comment", "createdAt"]
+    },
+    "VisitorEvent": {
+      "title": "Visitor Event",
+      "description": "A tracked interaction from a site visitor.",
+      "type": "object",
+      "properties": {
+        "eventType": { "type": "string", "enum": ["view", "click"], "description": "Type of interaction" },
+        "page": { "type": "string", "description": "Page or section targeted" },
+        "product": { "type": "string", "description": "Product involved if any" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["eventType", "createdAt"]
+    }
+  },
+  "firestore": {
+    "orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of all customer acquisitions."
+    },
+    "admins/{uid}": {
+      "schema": "AdminProfile",
+      "description": "List of authorized administrators."
+    },
+    "reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Public collection of product ratings and testimonials."
+    },
+    "visitors/{eventId}": {
+      "schema": "VisitorEvent",
+      "description": "Log of customer interactions for analytics."
+    }
+  }
+}

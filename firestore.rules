@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'mehaalkhan.2@gmail.com' ||
+        (request.auth.token.email_verified == true && exists(/databases/$(database)/documents/admins/$(request.auth.uid)))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- ORDERS COLLECTION ---
+    match /orders/{orderId} {
+      function isValidOrder(data) {
+        return data.customerName is string && data.customerName.size() <= 100 &&
+               data.phone is string && data.phone.size() <= 50 &&
+               data.shippingAddress is string && data.shippingAddress.size() <= 500 &&
+               data.productName is string && data.productName.size() <= 100 &&
+               data.orderStatus in ['pending', 'confirmed', 'shipped', 'delivered'] &&
+               data.createdAt == request.time;
+      }
+
+      // Public can create orders (Acquisition flow)
+      allow create: if isValidId(orderId) && isValidOrder(incoming());
+      
+      // Only Admins can view and managed orders
+      allow get, list, update, delete: if isAdmin();
+    }
+
+    // --- ADMINS COLLECTION ---
+    match /admins/{uid} {
+      allow read: if isVerified() && request.auth.uid == uid;
+      allow write: if false; // Admins managed via console or first boot logic
+    }
+
+    // --- REVIEWS COLLECTION ---
+    match /reviews/{reviewId} {
+      function isValidReview(data) {
+        return data.productName is string && data.productName.size() <= 100 &&
+               data.userName is string && data.userName.size() <= 100 &&
+               data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+               data.comment is string && data.comment.size() <= 1000 &&
+               data.isApproved is bool &&
+               data.createdAt == request.time;
+      }
+
+      // Public can read approved reviews or Admins can see all
+      allow list: if (resource.data.isApproved == true) || isAdmin();
+      allow get: if true;
+
+      // Public can create reviews
+      allow create: if isValidId(reviewId) && isValidReview(incoming());
+
+      // Only Admins can manage all reviews
+      allow update, delete: if isAdmin();
+    }
+
+    // --- VISITORS COLLECTION ---
+    match /visitors/{eventId} {
+      function isValidEvent(data) {
+        return data.eventType in ['view', 'click'] &&
+               data.createdAt == request.time;
+      }
+      allow create: if isValidId(eventId) && isValidEvent(incoming());
+      allow get, list, update, delete: if isAdmin();
+    }
+  }
+}
